@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FarmaPrecios Panamá</title>
+<meta name="description" content="Compara el precio de tus medicamentos en las farmacias de Panamá.">
+<meta name="theme-color" content="#13293D">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FarmaPrecios">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #13293D; --bg: #EEF3F1; --paper: #FFFFFF; --line: #D5DFDB; --muted: #5A6B66;
+    --cheap: #0E7A55; --cheap-soft: #DCEFE6; --promo: #B5560F; --promo-soft: #FBE7D7; --bar: #C9D6D1;
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: max(20px, env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom)); }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--cheap); outline-offset: 2px; }
+
+  header h1 { font: 700 1.75rem/1.1 var(--display); margin: 6px 0 4px; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--muted); }
+  .install { display: none; margin-top: 12px; background: var(--ink); color: #fff; border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 600; cursor: pointer; }
+
+  .search { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 16px 0 10px; }
+  .search input { width: 100%; padding: 14px 16px; border: 2px solid var(--line); border-radius: 12px; background: var(--paper); font-size: 1.05rem; }
+  .search input:focus { outline: none; border-color: var(--ink); }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .row label { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: .9rem; cursor: pointer; }
+  .row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--cheap); }
+  .count { color: var(--muted); font-size: .85rem; }
+
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 12px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 6px 14px; font-size: .9rem; cursor: pointer; white-space: nowrap; }
+  .chip[aria-pressed=true] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  ul.meds { list-style: none; margin: 0; padding: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  ul.meds li + li { border-top: 1px solid var(--line); }
+  ul.meds a { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 14px 16px; color: inherit; text-decoration: none; }
+  ul.meds a:active { background: var(--bg); }
+  .mname { font: 600 1.08rem/1.25 var(--display); }
+  .msub { color: var(--muted); font-size: .85rem; }
+  .mprice { grid-row: span 2; align-self: center; text-align: right; white-space: nowrap; }
+  .mprice b { display: inline; font: 700 1.1rem/1.1 var(--display); color: var(--cheap); }
+  .mprice small { color: var(--muted); font-size: .78rem; }
+  .mprice small:first-child { display: block; }
+  .mprice b + small { margin-left: 3px; }
+
+  .back { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 6px 0; color: var(--muted); cursor: pointer; font-weight: 600; }
+  .det h2 { font: 700 1.6rem/1.15 var(--display); margin: 8px 0 2px; letter-spacing: -0.01em; }
+  .det .cat { color: var(--muted); margin: 0 0 18px; }
+  .pres { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+  .pres h3 { margin: 0; padding: 14px 16px 2px; font: 600 1.05rem/1.3 var(--display); }
+  .pres .ps { margin: 0; padding: 0 16px 12px; color: var(--muted); font-size: .88rem; }
+  .pres .ps strong { color: var(--cheap); }
+  ol.items { list-style: none; margin: 0; padding: 0; }
+  ol.items li { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; padding: 12px 16px; border-top: 1px solid var(--line); }
+  ol.items li.best { background: var(--cheap-soft); }
+  .iname { font-weight: 600; font-size: .95rem; line-height: 1.3; }
+  .imeta { color: var(--muted); font-size: .82rem; }
+  .imeta a { color: inherit; }
+  .iprice { text-align: right; white-space: nowrap; font: 700 1.15rem/1.15 var(--display); }
+  li.best .iprice { color: var(--cheap); }
+  .iprice small { display: block; font: 500 .78rem var(--body); color: var(--muted); }
+  .iprice s { display: block; font: 400 .78rem var(--body); color: var(--muted); }
+  .bar { grid-column: 1 / -1; height: 4px; background: var(--bg); border-radius: 2px; }
+  .bar span { display: block; height: 100%; background: var(--bar); border-radius: 2px; }
+  li.best .bar span { background: var(--cheap); }
+  .tag { display: inline-block; font-size: .72rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; }
+  .tag.cheap { background: var(--cheap); color: #fff; }
+  .tag.promo { background: var(--promo-soft); color: var(--promo); }
+  .tag.out { background: var(--bg); color: var(--muted); }
+
+  .msg { background: var(--paper); border: 1px dashed var(--line); border-radius: 14px; padding: 20px; color: var(--muted); }
+  .msg strong { color: var(--ink); }
+  footer { margin-top: 28px; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+  footer p { margin: 0 0 8px; }
+  @media (prefers-reduced-motion: no-preference) { .det, ul.meds { animation: in .2s ease-out; } @keyframes in { from { opacity: 0; transform: translateY(4px); } } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>FarmaPrecios Panamá</h1>
+    <p>Busca tu medicamento y mira en qué farmacia cuesta menos.</p>
+    <button class="install" id="install" type="button">Instalar la app</button>
+  </header>
+
+  <main id="view" aria-live="polite"><div class="msg">Cargando precios…</div></main>
+
+  <footer>
+    <p id="updated"></p>
+    <p>Precios tomados de las tiendas en línea de cada farmacia. Pueden variar en la sucursal. Antes de cambiar de medicamento o de marca, consulta a tu médico o farmacéutico.</p>
+  </footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fold = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const money = v => "$" + v.toFixed(2);
+const UNIT = { u: "c/u", ml: "por ml", g: "por g" };
+const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+                set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+
+let DATA = null, cat = "Todos", q = "", jub = store.get("jub", false);
+const k = () => jub ? 0.8 : 1;
+
+function fechaLarga(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString("es-PA", { day: "numeric", month: "long" }) + ", " + d.toLocaleTimeString("es-PA", { hour: "2-digit", minute: "2-digit" });
+}
+
+function bestOf(m) {
+  // meilleur prix unitaire (sinon meilleur prix) sur toutes les presentations
+  let bu = Infinity, bp = Infinity, unit = "u";
+  for (const p of m.presentaciones) for (const i of p.items) {
+    if (i.pu != null && i.pu < bu) { bu = i.pu; unit = i.u || "u"; }
+    if (i.p < bp) bp = i.p;
+  }
+  return bu < Infinity ? { v: bu, lab: UNIT[unit] || "c/u" } : { v: bp, lab: "" };
+}
+
+function matches(m, words) {
+  if (!words.length) return true;
+  const hay = m._hay || (m._hay = fold([m.nombre, m.categoria, ...m.marcas,
+    ...m.presentaciones.flatMap(p => [p.label, ...p.items.map(i => i.n)])].join(" ")));
+  return words.every(w => hay.includes(w));
+}
+
+function viewList() {
+  const cats = ["Todos", ...new Set(DATA.medicamentos.map(m => m.categoria))];
+  const words = fold(q).split(/\s+/).filter(Boolean);
+  const list = DATA.medicamentos.filter(m => (cat === "Todos" || m.categoria === cat) && matches(m, words));
+  $("#view").innerHTML = `
+    <div class="search">
+      <input type="search" id="q" value="${esc(q)}" placeholder="Ej.: losartán, Panadol, metformina" aria-label="Buscar medicamento" autocomplete="off">
+      <div class="row">
+        <label><input type="checkbox" id="jub" ${jub ? "checked" : ""}> Precio de jubilado (−20 %)</label>
+        <span class="count">${list.length} medicamento${list.length === 1 ? "" : "s"}</span>
+      </div>
+    </div>
+    <div class="chips" role="group" aria-label="Categorías">
+      ${cats.map(c => `<button class="chip" type="button" data-cat="${esc(c)}" aria-pressed="${c === cat}">${esc(c)}</button>`).join("")}
+    </div>
+    ${list.length ? `<ul class="meds">${list.map(m => {
+      const b = bestOf(m);
+      return `<li><a href="#m/${m.id}">
+        <span class="mname">${esc(m.nombre)}</span>
+        <span class="mprice"><small>desde</small><b>${money(b.v * k())}</b>${b.lab ? `<small>${b.lab}</small>` : ""}</span>
+        <span class="msub">${m.farmacias} farmacia${m.farmacias > 1 ? "s" : ""}${m.marcas.length ? ". " + esc(m.marcas.slice(0, 3).join(", ")) : ""}</span>
+      </a></li>`;
+    }).join("")}</ul>`
+    : `<div class="msg"><strong>No encontramos «${esc(q)}».</strong><br>Prueba con el nombre del principio activo (por ejemplo «ibuprofeno» en vez de la marca). Por ahora la app cubre los medicamentos más comprados en Panamá.</div>`}`;
+  const inp = $("#q");
+  inp.addEventListener("input", e => { q = e.target.value; viewList(); const i = $("#q"); i.focus(); i.setSelectionRange(q.length, q.length); });
+  $("#jub").addEventListener("change", e => { jub = e.target.checked; store.set("jub", jub); viewList(); });
+  document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { cat = b.dataset.cat; viewList(); }));
+}
+
+function viewMed(id) {
+  const m = DATA.medicamentos.find(x => x.id === id);
+  if (!m) { location.hash = ""; return; }
+  const F = DATA.farmacias;
+  const pres = m.presentaciones.map(p => {
+    const withU = p.items.filter(i => i.pu != null);
+    const useU = withU.length >= 2 && withU.length >= p.items.length / 2;
+    const val = i => useU ? (i.pu ?? Infinity) : i.p;
+    const xs = [...p.items].sort((a, b) => val(a) - val(b));
+    const vals = xs.map(val).filter(v => v !== Infinity);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const nf = new Set(xs.map(i => i.f)).size;
+    const unitLab = useU ? " " + (UNIT[xs[0].u] || "c/u") : "";
+    const sub = xs.length > 1 && hi > lo
+      ? `De <strong>${money(lo * k())}</strong> a ${money(hi * k())}${unitLab}. Con el más barato ahorras hasta ${Math.round((1 - lo / hi) * 100)} %.`
+      : `${money(lo * k())}${unitLab}.`;
+    const items = xs.map((i, n) => {
+      const best = n === 0 && xs.length > 1 && val(i) !== Infinity;
+      const w = hi > 0 && val(i) !== Infinity ? Math.max(4, val(i) / hi * 100) : 100;
+      const qn = i.q ? (i.q % 1 ? i.q : Math.round(i.q)) : 0;
+      const qty = qn ? `${qn} ${i.u === "u" ? (qn === 1 ? "unidad" : "unidades") : i.u}` : "";
+      return `<li${best ? ' class="best"' : ""}>
+        <div>
+          <div class="iname">${esc(i.n)}${best ? '<span class="tag cheap">Más barato</span>' : ""}${i.promo ? `<span class="tag promo">${esc(i.promo)}</span>` : ""}${i.stock === 0 ? '<span class="tag out">Agotado</span>' : ""}</div>
+          <div class="imeta">${esc(F[i.f] || i.f)}${qty ? ", " + qty : ""}${i.url ? ` — <a href="${esc(i.url)}" target="_blank" rel="noopener">Ver en la tienda</a>` : ""}</div>
+        </div>
+        <div class="iprice">${money(i.p * k())}${i.pa ? `<s>${money(i.pa * k())}</s>` : ""}${i.pu != null && i.q > 1 ? `<small>${money(i.pu * k())} ${UNIT[i.u] || ""}</small>` : ""}</div>
+        <div class="bar" aria-hidden="true"><span style="width:${w}%"></span></div>
+      </li>`;
+    }).join("");
+    return `<section class="pres"><h3>${esc(p.label)}</h3><p class="ps">${xs.length} producto${xs.length > 1 ? "s" : ""} en ${nf} farmacia${nf > 1 ? "s" : ""}. ${sub}</p><ol class="items">${items}</ol></section>`;
+  }).join("");
+  $("#view").innerHTML = `<article class="det">
+    <button class="back" type="button" id="back">← Todos los medicamentos</button>
+    <h2>${esc(m.nombre)}</h2>
+    <p class="cat">${esc(m.categoria)}${jub ? ". Precios de jubilado (−20 %)" : ""}</p>
+    ${pres}
+  </article>`;
+  $("#back").addEventListener("click", () => history.length > 1 ? history.back() : (location.hash = ""));
+  window.scrollTo(0, 0);
+}
+
+function route() {
+  if (!DATA) return;
+  const m = location.hash.match(/^#m\/(\d+)/);
+  m ? viewMed(+m[1]) : viewList();
+}
+
+async function load() {
+  try {
+    const r = await fetch("precios.json", { cache: "no-cache" });
+    DATA = await r.json();
+    $("#updated").textContent = `Precios actualizados: ${fechaLarga(DATA.generado)} (${DATA.medicamentos.length} medicamentos)`;
+    route();
+  } catch {
+    $("#view").innerHTML = `<div class="msg"><strong>No se pudieron cargar los precios.</strong><br>Revisa tu conexión a internet y vuelve a abrir la app.</div>`;
+  }
+}
+
+window.addEventListener("hashchange", route);
+let deferred = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; $("#install").style.display = "inline-block"; });
+$("#install").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("#install").style.display = "none"; });
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+load();
+</script>
+</body>
+</html>
