@@ -1,5 +1,5 @@
 // FarmaPrecios : l'app marche hors connexion avec les derniers prix telecharges.
-const SHELL = "fp-shell-v1";
+const SHELL = "fp-shell-v2";
 const DATA = "fp-data";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
@@ -20,6 +20,15 @@ self.addEventListener("fetch", e => {
       caches.open(DATA).then(c => c.put("precios.json", copy));
       return r;
     }).catch(() => caches.open(DATA).then(c => c.match("precios.json"))));
+    return;
+  }
+  if (e.request.mode === "navigate") {
+    // la page : reseau d'abord pour recevoir les nouvelles versions de l'app, cache si hors connexion
+    e.respondWith(fetch(e.request).then(r => {
+      const copy = r.clone();
+      caches.open(SHELL).then(c => c.put("./", copy));
+      return r;
+    }).catch(() => caches.match("./")));
     return;
   }
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));

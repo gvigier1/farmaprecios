@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="FarmaPrecios">
+<script data-goatcounter="https://gvigier.goatcounter.com/count" data-goatcounter-settings='{"no_onload": true}' async src="https://gc.zgo.at/count.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -114,6 +115,26 @@ const UNIT = { u: "c/u", ml: "por ml", g: "por g" };
 const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
                 set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 
+// Statistiques anonymes (GoatCounter : sans cookies, sans donnees personnelles)
+const STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const gcQueue = [];
+function stat(path, title, event = false) {
+  gcQueue.push({ path, title: title || path, event });
+  flushStats();
+}
+function flushStats() {
+  if (!window.goatcounter || !window.goatcounter.count) { setTimeout(flushStats, 1500); return; }
+  while (gcQueue.length) { try { window.goatcounter.count(gcQueue.shift()); } catch {} }
+}
+const slug = s => fold(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+let searchTimer = null;
+function statSearch(text, found) {
+  clearTimeout(searchTimer);
+  const t = slug(text);
+  if (t.length < 3) return;
+  searchTimer = setTimeout(() => stat((found ? "buscar/" : "buscar-sin-resultado/") + t, text, true), 1500);
+}
+
 let DATA = null, cat = "Todos", q = "", jub = store.get("jub", false);
 const k = () => jub ? 0.8 : 1;
 
@@ -166,6 +187,7 @@ function viewList() {
     : `<div class="msg"><strong>No encontramos «${esc(q)}».</strong><br>Prueba con el nombre del principio activo (por ejemplo «ibuprofeno» en vez de la marca). Por ahora la app cubre los medicamentos más comprados en Panamá.</div>`}`;
   const inp = $("#q");
   inp.addEventListener("input", e => { q = e.target.value; viewList(); const i = $("#q"); i.focus(); i.setSelectionRange(q.length, q.length); });
+  if (q) statSearch(q, list.length > 0);
   $("#jub").addEventListener("change", e => { jub = e.target.checked; store.set("jub", jub); viewList(); });
   document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { cat = b.dataset.cat; viewList(); }));
 }
@@ -191,7 +213,7 @@ function viewMed(id) {
       const w = hi > 0 && val(i) !== Infinity ? Math.max(4, val(i) / hi * 100) : 100;
       const qn = i.q ? (i.q % 1 ? i.q : Math.round(i.q)) : 0;
       const qty = qn ? `${qn} ${i.u === "u" ? (qn === 1 ? "unidad" : "unidades") : i.u}` : "";
-      return `<li${best ? ' class="best"' : ""}>
+      return `<li data-f="${esc(i.f)}"${best ? ' class="best"' : ""}>
         <div>
           <div class="iname">${esc(i.n)}${best ? '<span class="tag cheap">Más barato</span>' : ""}${i.promo ? `<span class="tag promo">${esc(i.promo)}</span>` : ""}${i.stock === 0 ? '<span class="tag out">Agotado</span>' : ""}</div>
           <div class="imeta">${esc(F[i.f] || i.f)}${qty ? ", " + qty : ""}${i.url ? ` — <a href="${esc(i.url)}" target="_blank" rel="noopener">Ver en la tienda</a>` : ""}</div>
@@ -209,6 +231,11 @@ function viewMed(id) {
     ${pres}
   </article>`;
   $("#back").addEventListener("click", () => history.length > 1 ? history.back() : (location.hash = ""));
+  document.querySelectorAll(".imeta a").forEach(a => a.addEventListener("click", () => {
+    const f = a.closest("li").dataset.f;
+    stat("tienda/" + f, "Ver en la tienda: " + (F[f] || f), true);
+  }));
+  stat("m/" + slug(m.nombre), m.nombre);
   window.scrollTo(0, 0);
 }
 
@@ -219,6 +246,7 @@ function route() {
 }
 
 async function load() {
+  stat(STANDALONE ? "/inicio-app" : "/inicio", STANDALONE ? "Inicio (app instalada)" : "Inicio (navegador)");
   try {
     const r = await fetch("precios.json", { cache: "no-cache" });
     DATA = await r.json();
@@ -233,6 +261,7 @@ window.addEventListener("hashchange", route);
 let deferred = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; $("#install").style.display = "inline-block"; });
 $("#install").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("#install").style.display = "none"; });
+window.addEventListener("appinstalled", () => stat("instalada", "App instalada", true));
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 load();
 </script>
