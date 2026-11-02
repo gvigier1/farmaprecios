@@ -1,5 +1,5 @@
 // FarmaPrecios : l'app marche hors connexion avec les derniers prix telecharges.
-const SHELL = "fp-shell-v2";
+const SHELL = "fp-shell-v3";
 const DATA = "fp-data";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
